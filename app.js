@@ -115,7 +115,7 @@ app.post("/signup", async (req, res) => {
     }
     //password length validation
     if (plaintextpassword.length < 8 || plaintextpassword.length < 8) {
-        return res.json({ status: "error", message: "Password should have minimum 8 characters and maximum 10 characters", type: "password" })
+        return res.json({ status: "error", message: "Password should have minimum 8 characters and maximum 30 characters", type: "password" })
     }
     //password validation
     if (regpass.test(plaintextpassword) === false) {

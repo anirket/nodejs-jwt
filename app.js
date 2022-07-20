@@ -5,47 +5,35 @@ require('dotenv').config()
 //require everything
 const express = require("express");
 const app = express();
-const mongoose = require("mongoose");
-const User = require("./models/user")
 const bcrypt = require('bcryptjs');
 const jwt = require("jsonwebtoken");
 const cookieparser = require("cookie-parser");
-const path = require("path");
 const JWT_SECRET = process.env.SECRET;
+const studentdata = require('./Studentdata')
+const admindata = require('./Admindata')
+const cors = require('cors');
+const fs = require('fs');
 
 //middlewares
-app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieparser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(cors());
+
+app.listen(4000);
+const circulardata = require('./Circular.json')
 
 
-
-mongoose.connect(process.env.MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true
-})
-app.listen(process.env.PORT || 3000);
+let past_circular = [...circulardata.circular];
 
 
 app.get("/", (req, res) => {
-    res.render("signup");
+    res.send("SERVER RUNNING SUCCESFULLY");
 })
 
-app.get('/login', (req, res) => {
-    res.render("login");
-})
-
-app.get('/logout', (req, res) => {
-    res.clearCookie("jwt");
-    res.redirect("/login")
-})
 
 //protected route
 app.get("/protected", (req, res) => {
-
     let user_token;
     if (req.cookies.jwt) {
         user_token = req.cookies.jwt;
@@ -59,20 +47,67 @@ app.get("/protected", (req, res) => {
 })
 
 
+app.get('/getcirculars', (req, res) => {
+
+
+    res.json(past_circular);
+})
+app.get('/getstudents', (req, res) => {
+    const circulardata = require('./Studentdata.json')
+    console.log(circulardata)
+    const circular = circulardata.student_data;
+    res.json(circular);
+})
+
+app.post('/postcircular', (req, res) => {
+
+    const { message } = req.body;
+
+    const circulardata = require('./Circular.json')
+
+    const circular = circulardata.circular;
+
+    past_circular = [...past_circular, { message }]
+
+
+
+    const newmessage = [...circular, {
+        message
+    }]
+
+    fs.writeFile('./Circular.json', JSON.stringify({ "circular": newmessage }, null, 2), () => {
+        return res.json({ status: "ok", redirected: "true", data: "rjbhbi" })
+    });
+
+})
+
 
 
 //login
-app.post("/login", async (req, res) => {
-    const { emailvalue: email, passvalue: password } = req.body;
+app.post("/studentlogin", async (req, res) => {
+    const { USN, password } = req.body;
 
-    const user = await User.findOne({ email }).lean()
+    // const user = await User.findOne({ email }).lean()
+    //search for user
+    console.log(req.body)
+    let user = undefined;
+
+
+    studentdata.student_data.map((student) => {
+        // console.log('HELLO',student, USN)
+        if (Number(student.usn) === Number(USN)) {
+            user = student
+        }
+    })
+
+    console.log(user);
 
 
     if (!user) {
-        return res.json({ status: "error", message: "Email ID not found", type: "email" })
+        return res.json({ status: "error", error: "Wrong credentials" })
     }
 
-    if (await bcrypt.compare(password, user.password)) {
+    if (await bcrypt.compare(password.toString(), user.pass.toString())) {
         const token = jwt.sign(
             {
                 id: user._id,
@@ -80,89 +115,88 @@ app.post("/login", async (req, res) => {
             },
             `${JWT_SECRET}`
         );
-        res.cookie("jwt", token)
         return res.json({ status: "ok", data: token })
     }
 
-    return res.json({ status: "error", message: "Password Incorrect", type: "password" })
+    return res.json({ status: "error", error: "Wrong credentials", type: "password" })
+})
+
+app.post("/adminlogin", async (req, res) => {
+    const { id, password } = req.body;
+
+    // const user = await User.findOne({ email }).lean()
+    //search for user
+    console.log('helo', req.body)
+    let user = undefined;
+
+
+    admindata.admin_data.map((admin) => {
+        // console.log('HELLO',student, USN)
+        if (admin.id === id) {
+            user = admin
+        }
+    })
+
+    console.log(user);
+
+
+    if (!user) {
+        return res.json({ status: "error", error: "Wrong credentials" })
+    }
+
+    if (password.toString() == user.pass.toString()) {
+        const token = jwt.sign(
+            {
+                id: user.id,
+            },
+            `${JWT_SECRET}`
+        );
+        return res.json({ status: "ok", data: token })
+    }
+
+    return res.json({ status: "error", error: "Wrong credentials", type: "password" })
 })
 
 
 
-
 //signup
-app.post("/signup", async (req, res) => {
+app.post("/studentregister", async (req, res) => {
 
-    const { username, email, password: plaintextpassword, confPass } = req.body;
+    const { usn, password } = req.body;
+    console.log("here")
 
+    // const response = await User.create({
+    //     username,
+    //     password,
+    //     email
+    // })
+    // -- add user is JSON file
 
+    const existinguser = studentdata.student_data;
+    let useralready_exists = false;
 
-    //validation
-    if (!username || typeof username !== 'string') {
-        return res.json({ status: "error", message: "Enter valid username", type: "username" })
-    }
-    if (!plaintextpassword || typeof plaintextpassword !== 'string') {
-        return res.json({ status: "error", message: "Enter valid password", type: "password" })
-    }
-    let reg = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}$/;
-    let regpass = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$@!%&*?])[A-Za-z\d#$@!%&*?]{8,30}$/;
-    const usernamequery = { "username": username };
-    const emailquery = { "email": email }
-
-    //email validation
-    if (!reg.test(email)) {
-        return res.json({ status: "error", message: "Enter valid emailID", type: "email" })
-    }
-    //password length validation
-    if (plaintextpassword.length < 8 || plaintextpassword.length < 8) {
-        return res.json({ status: "error", message: "Password should have minimum 8 characters and maximum 30 characters", type: "password" })
-    }
-    //password validation
-    if (regpass.test(plaintextpassword) === false) {
-        return res.json({ status: "error", message: "Password should contain atleast one uppercase letter, one lowercase letter, one number and one special character", type: "password" })
-    }
-    //username validation
-    if (username.length < 6) {
-        return res.json({ status: "error", message: "Username should be atleast 6 characters", type: "username" })
-    }
-    if (plaintextpassword !== confPass) {
-        return res.json({ status: "error", message: "Password fields do not match", type: "notsamepassword" })
-
-    }
-
-
-    //username duplicate check
-    const user = await User.findOne(usernamequery);
-    if (user) {
-        return res.json({ status: "error", message: "Username already in use", type: "username" })
-    }
-
-    //email duplicate check
-    const useremail = await User.findOne(emailquery);
-    if (useremail) {
-        return res.json({ status: "error", message: "Email already in use", type: "email" })
-    }
-
-    //hash password
-    const password = await bcrypt.hash(plaintextpassword, 10);
-
-    try {
-        const response = await User.create({
-            username,
-            password,
-            email
-        })
-        return res.json({ status: "ok", redirected: "true", data: "rjbhbi" })
-
-    } catch (error) {
-
-        if (error.code === 11000) {
-            return res.json({ status: "error", message: "Username already in use", type: "username" })
+    existinguser.map((student) => {
+        if (student.usn === usn) {
+            useralready_exists = true;
         }
-        return res.json({ status: error })
+    })
 
+    if (useralready_exists) {
+        console.log("here")
+        return res.json({ error: "user already exists Please Login" })
     }
 
+    const encryptedpassword = await bcrypt.hash(password, 10);
 
 
+    const newstudent = [...existinguser, {
+        usn,
+        pass: encryptedpassword
+    }]
+    console.log('ee', newstudent)
+
+    fs.writeFile('./Studentdata.json', JSON.stringify({ "student_data": newstudent }, null, 2), () => {
+        return res.json({ status: "ok", redirected: "true", data: "rjbhbi" })
+    });
+    res.json({ error: "Something went wrong! Please try again" })
 })

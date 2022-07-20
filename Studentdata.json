@@ -1,0 +1,32 @@
+{
+  "student_data": [
+    {
+      "usn": "12",
+      "pass": "$2a$10$wcN2vFbxORgay6ngwrDDHO2Fy15iANOElYhzTkqofgAQeIbVMEdUO"
+    },
+    {
+      "usn": "122",
+      "pass": "$2a$10$daYqsjpQhQZXRCe7V32rbuRUCHVSrW1DxgNQ9.lilUnGK4w8zcCnq"
+    },
+    {
+      "usn": "122",
+      "pass": "$2a$10$jf3.m7R1DJiavBq9iBlfqee.6nMnUFssjSWo9Gt.U1notuNuFp0ze"
+    },
+    {
+      "usn": "123",
+      "pass": "$2a$10$LvP2KHyjOvyjTFtEL04iRO.rrOcWGXaXheQ8NWITpz9cY57mNcDMu"
+    },
+    {
+      "usn": "123",
+      "pass": "$2a$10$Gb0b4W2Fyy2UfGHWWvItKe9EesvnFPPiEhW8UuAT2y0zt73gX7nly"
+    },
+    {
+      "usn": "3123",
+      "pass": "$2a$10$VwDg6vAFIu.elcMSMgwg0u2iBjEV6pW2iz80qfyfni0jq3eSE1aJi"
+    },
+    {
+      "usn": "3444",
+      "pass": "$2a$10$/4aAp/IvS8G25cwyC45s9uaVfT8fjHLvKYBSOobQToasmwRiZEHeK"
+    }
+  ]
+}

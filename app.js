@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(cookieparser());
 app.use(cors());
 
-app.listen(4000);
+app.listen(process.env.PORT || 4000);
 const circulardata = require('./Circular.json')
 
 
